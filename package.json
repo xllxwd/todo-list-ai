@@ -8,7 +8,8 @@
     "start": "next start",
     "typecheck": "tsc --noEmit",
     "test:api": "node scripts/test-api.mjs",
-    "test:breakdown": "node scripts/test-breakdown-api.mjs"
+    "test:breakdown": "node scripts/test-breakdown-api.mjs",
+    "test:prompt": "node scripts/test-prompt-api.mjs"
   },
   "dependencies": {
     "@supabase/supabase-js": "^2.45.4",

@@ -18,7 +18,10 @@ type ApiError = {
   details?: string
 }
 
+type ActiveTab = 'tasks' | 'prompt'
+
 export default function HomePage() {
+  const [activeTab, setActiveTab] = useState<ActiveTab>('tasks')
   const [tasks, setTasks] = useState<Task[]>([])
   const [newTitle, setNewTitle] = useState('')
   const [loading, setLoading] = useState(true)
@@ -134,71 +137,253 @@ export default function HomePage() {
         <meta name="viewport" content="width=device-width, initial-scale=1" />
       </Head>
 
-      <main className="min-h-screen px-4 py-6 font-serifcn text-[#28313a] sm:px-6 lg:px-8">
-        <section className="paper-shell mx-auto min-h-[calc(100vh-3rem)] w-full max-w-5xl border border-[#927d5f]/25 px-4 py-7 shadow-paper sm:px-8 lg:px-12">
-          <header className="mx-auto mb-8 max-w-4xl">
-            <h1 className="mb-7 text-center font-journal text-5xl font-normal leading-none text-[#28313a] sm:text-6xl">
+      <main className="app-main">
+        <section className="paper-shell app-shell">
+          <nav className="journal-tabs">
+            <TabButton active={activeTab === 'tasks'} onClick={() => setActiveTab('tasks')}>
               待办事项
-            </h1>
+            </TabButton>
+            <TabButton active={activeTab === 'prompt'} onClick={() => setActiveTab('prompt')}>
+              提示词生成
+            </TabButton>
+          </nav>
 
-            <form
-              className="grid gap-3 sm:grid-cols-[1fr_auto]"
-              onSubmit={(event) => {
-                event.preventDefault()
-                void handleAddTask()
-              }}
-            >
-              <input
-                value={newTitle}
-                onChange={(event) => setNewTitle(event.target.value)}
-                className="min-h-14 border-2 border-dashed border-[#806549]/75 bg-white/45 px-4 font-journal text-xl outline-none transition focus:border-[#725337] focus:bg-white/70 focus:ring-4 focus:ring-[#806549]/10"
-                placeholder="写下新任务..."
-                aria-label="写下新任务"
-              />
-              <button
-                type="submit"
-                disabled={saving || !newTitle.trim()}
-                className="min-h-14 bg-[#b5a691] px-8 font-journal text-lg text-[#fffaf0] shadow-note transition hover:-translate-y-0.5 hover:bg-[#a3947f] disabled:cursor-not-allowed disabled:opacity-55 sm:min-w-28"
-              >
-                {saving ? '添加中' : '添加'}
-              </button>
-            </form>
+          {activeTab === 'tasks' ? (
+            <>
+              <header className="task-header">
+                <h1 className="page-title">
+                  待办事项
+                </h1>
 
-            {error ? (
-              <p className="mt-4 border border-[#bf6b68]/30 bg-[#fff4ef]/70 px-4 py-3 font-journal text-lg text-[#914a47]">
-                {error}
-              </p>
-            ) : null}
-          </header>
-
-          <section className="mx-auto max-w-4xl">
-            {loading ? (
-              <p className="border border-dashed border-[#806549]/40 bg-white/35 px-5 py-10 text-center font-journal text-xl text-[#8e806f]">
-                正在翻开手账...
-              </p>
-            ) : taskTree.length ? (
-              <ul className="space-y-3" aria-label="任务列表">
-                {taskTree.map((task) => (
-                  <TaskItem
-                    key={task.id}
-                    task={task}
-                    level={0}
-                    breakingTaskId={breakingTaskId}
-                    onToggle={handleToggleTask}
-                    onDelete={handleDeleteTask}
-                    onBreakdown={handleBreakdownTask}
+                <form
+                  className="task-form"
+                  onSubmit={(event) => {
+                    event.preventDefault()
+                    void handleAddTask()
+                  }}
+                >
+                  <input
+                    value={newTitle}
+                    onChange={(event) => setNewTitle(event.target.value)}
+                    className="task-input"
+                    placeholder="写下新任务..."
+                    aria-label="写下新任务"
                   />
-                ))}
-              </ul>
-            ) : (
-              <p className="border border-dashed border-[#806549]/40 bg-white/35 px-5 py-10 text-center font-journal text-xl text-[#8e806f]">
-                还没有任务
-              </p>
-            )}
-          </section>
+                  <button
+                    type="submit"
+                    disabled={saving || !newTitle.trim()}
+                    className="button button-primary add-button"
+                  >
+                    {saving ? '添加中' : '添加'}
+                  </button>
+                </form>
+
+                {error ? (
+                  <p className="error-banner">
+                    {error}
+                  </p>
+                ) : null}
+              </header>
+
+              <TaskBoard
+                loading={loading}
+                taskTree={taskTree}
+                breakingTaskId={breakingTaskId}
+                onToggle={handleToggleTask}
+                onDelete={handleDeleteTask}
+                onBreakdown={handleBreakdownTask}
+              />
+            </>
+          ) : (
+            <PromptGenerator />
+          )}
         </section>
       </main>
     </>
+  )
+}
+
+function TabButton({
+  active,
+  children,
+  onClick,
+}: {
+  active: boolean
+  children: string
+  onClick: () => void
+}) {
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      className={[
+        'journal-tab',
+        active ? '' : 'journal-tab-idle',
+      ].join(' ')}
+      data-active={active}
+    >
+      {children}
+    </button>
+  )
+}
+
+function TaskBoard({
+  loading,
+  taskTree,
+  breakingTaskId,
+  onToggle,
+  onDelete,
+  onBreakdown,
+}: {
+  loading: boolean
+  taskTree: TaskNode[]
+  breakingTaskId: string | null
+  onToggle: (task: Task) => Promise<void>
+  onDelete: (task: Task) => Promise<void>
+  onBreakdown: (task: Task) => Promise<void>
+}) {
+  return (
+    <section className="task-board">
+      {loading ? (
+        <p className="empty-state">
+          正在翻开手账...
+        </p>
+      ) : taskTree.length ? (
+        <ul className="task-list" aria-label="任务列表">
+          {taskTree.map((task) => (
+            <TaskItem
+              key={task.id}
+              task={task}
+              level={0}
+              breakingTaskId={breakingTaskId}
+              onToggle={onToggle}
+              onDelete={onDelete}
+              onBreakdown={onBreakdown}
+            />
+          ))}
+        </ul>
+      ) : (
+        <p className="empty-state">
+          还没有任务
+        </p>
+      )}
+    </section>
+  )
+}
+
+function PromptGenerator() {
+  const [userRequest, setUserRequest] = useState('')
+  const [optimizedPrompt, setOptimizedPrompt] = useState('')
+  const [generating, setGenerating] = useState(false)
+  const [copied, setCopied] = useState(false)
+  const [error, setError] = useState<string | null>(null)
+
+  async function handleGeneratePrompt() {
+    const request = userRequest.trim()
+    if (!request) return
+
+    setGenerating(true)
+    setCopied(false)
+    setError(null)
+
+    try {
+      const data = await apiRequest<{ prompt: string }>('/api/prompts/optimize', {
+        method: 'POST',
+        body: { user_request: request },
+      })
+      setOptimizedPrompt(data.prompt)
+    } catch (requestError) {
+      setError(getErrorMessage(requestError))
+    } finally {
+      setGenerating(false)
+    }
+  }
+
+  async function handleCopyPrompt() {
+    if (!optimizedPrompt) return
+
+    try {
+      await navigator.clipboard.writeText(optimizedPrompt)
+      setCopied(true)
+      window.setTimeout(() => setCopied(false), 1600)
+    } catch {
+      setError('复制失败，请手动选中提示词内容复制')
+    }
+  }
+
+  function handleClearPrompt() {
+    setUserRequest('')
+    setOptimizedPrompt('')
+    setCopied(false)
+    setError(null)
+  }
+
+  return (
+    <section className="prompt-section">
+      <h1 className="page-title">
+        提示词优化
+      </h1>
+
+      <div className="prompt-stack">
+        <div>
+        <label className="journal-label" htmlFor="prompt-request">
+          输入你的提示词：
+        </label>
+        <textarea
+          id="prompt-request"
+          value={userRequest}
+          onChange={(event) => setUserRequest(event.target.value)}
+          className="prompt-paper prompt-textarea"
+          placeholder="分析一篇文章的写作风格、创作方法论和思维内核"
+        />
+        </div>
+
+        <div className="button-row">
+          <button
+            type="button"
+            disabled={generating || !userRequest.trim()}
+            onClick={() => void handleGeneratePrompt()}
+            className="button button-brown"
+          >
+            {generating ? '优化中' : '开始优化'}
+          </button>
+          <button
+            type="button"
+            disabled={!optimizedPrompt}
+            onClick={() => void handleCopyPrompt()}
+            className="button button-green"
+          >
+            {copied ? '已复制' : '复制结果'}
+          </button>
+          <button
+            type="button"
+            onClick={handleClearPrompt}
+            className="button button-red"
+          >
+            清空
+          </button>
+        </div>
+
+        {error ? (
+          <p className="error-banner">
+            {error}
+          </p>
+        ) : null}
+
+        <div>
+        <h2 className="journal-label">优化后的提示词：</h2>
+        {optimizedPrompt ? (
+          <pre className="prompt-paper prompt-output prompt-clip">
+            {optimizedPrompt}
+          </pre>
+        ) : (
+          <p className="prompt-paper prompt-empty prompt-clip">
+            优化结果会显示在这里
+          </p>
+        )}
+        </div>
+      </div>
+    </section>
   )
 }
 
@@ -221,13 +406,12 @@ function TaskItem({
   const isBreaking = breakingTaskId === task.id
 
   return (
-    <li className="space-y-3">
+    <li className="task-list-item">
       <article
         data-completed={task.completed}
         className={[
-          'task-note border border-[#8a7658]/25 bg-[#fffdf8]/85 px-4 py-4 shadow-note backdrop-blur-md transition',
-          'grid grid-cols-[auto_1fr] gap-3 sm:grid-cols-[auto_1fr_auto] sm:items-center sm:px-6',
-          level > 0 ? 'ml-7 border-l-4 border-l-[#806549]/80 sm:ml-14' : 'border-l-4 border-l-[#806549]/85',
+          'task-note task-card',
+          level > 0 ? 'task-card-child' : 'task-card-root',
         ].join(' ')}
       >
         {task.completed ? <span className="pin" aria-hidden="true" /> : null}
@@ -235,33 +419,33 @@ function TaskItem({
         <button
           type="button"
           data-checked={task.completed}
-          className="hand-checkbox mt-1"
+          className="hand-checkbox"
           aria-label={task.completed ? `标记 ${task.title} 为未完成` : `标记 ${task.title} 为完成`}
           onClick={() => void onToggle(task)}
         />
 
         <p
           className={[
-            'min-w-0 break-words font-journal text-[1.35rem] leading-snug',
-            task.completed ? 'text-[#6f675e]/60 line-through decoration-[#8f6c44] decoration-2' : '',
+            'task-title',
+            task.completed ? 'task-title-completed' : '',
           ].join(' ')}
         >
           {task.title}
         </p>
 
-        <div className="col-start-2 flex flex-wrap justify-end gap-2 sm:col-start-auto">
+        <div className="task-actions">
           <button
             type="button"
             disabled={isBreaking}
             onClick={() => void onBreakdown(task)}
-            className="min-h-10 bg-[#806549] px-5 font-journal text-base text-[#fffaf0] shadow-note transition hover:-translate-y-0.5 hover:bg-[#624e39] disabled:cursor-wait disabled:opacity-60"
+            className="button button-small button-brown"
           >
             {isBreaking ? '拆解中' : '拆解'}
           </button>
           <button
             type="button"
             onClick={() => void onDelete(task)}
-            className="min-h-10 bg-[#c86f70] px-5 font-journal text-base text-[#fffaf0] shadow-note transition hover:-translate-y-0.5 hover:bg-[#a85355]"
+            className="button button-small button-red"
           >
             删除
           </button>
@@ -269,7 +453,7 @@ function TaskItem({
       </article>
 
       {children.length ? (
-        <ul className="space-y-3">
+        <ul className="task-list task-sublist">
           {children.map((child) => (
             <TaskItem
               key={child.id}
