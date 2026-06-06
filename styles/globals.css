@@ -1,0 +1,119 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  html,
+  body,
+  #__next {
+    min-height: 100%;
+  }
+
+  body {
+    margin: 0;
+    color: #28313a;
+    background:
+      linear-gradient(rgba(255, 253, 247, 0.78), rgba(248, 240, 224, 0.86)),
+      repeating-linear-gradient(
+        0deg,
+        rgba(118, 97, 70, 0.07) 0,
+        rgba(118, 97, 70, 0.07) 1px,
+        transparent 1px,
+        transparent 5px
+      ),
+      repeating-linear-gradient(
+        90deg,
+        rgba(118, 97, 70, 0.06) 0,
+        rgba(118, 97, 70, 0.06) 1px,
+        transparent 1px,
+        transparent 5px
+      ),
+      #eee5d4;
+  }
+
+  button,
+  input {
+    font: inherit;
+  }
+}
+
+@layer components {
+  .paper-shell {
+    background:
+      radial-gradient(circle at 18% 12%, rgba(168, 135, 86, 0.08), transparent 28%),
+      radial-gradient(circle at 80% 24%, rgba(190, 119, 102, 0.08), transparent 24%),
+      rgba(255, 252, 244, 0.74);
+    backdrop-filter: blur(22px) saturate(1.1);
+    -webkit-backdrop-filter: blur(22px) saturate(1.1);
+  }
+
+  .hand-checkbox {
+    position: relative;
+    display: grid;
+    height: 1.7rem;
+    width: 1.7rem;
+    flex: none;
+    place-items: center;
+    border: 2px solid rgba(123, 94, 60, 0.9);
+    background: rgba(255, 255, 255, 0.44);
+    transform: rotate(-1deg);
+    box-shadow: inset 1px -1px rgba(123, 94, 60, 0.14);
+  }
+
+  .hand-checkbox::after {
+    content: '';
+    width: 0.86rem;
+    height: 0.48rem;
+    border-left: 3px solid #7c5c3a;
+    border-bottom: 3px solid #7c5c3a;
+    opacity: 0;
+    transform: rotate(-45deg) translate(1px, -1px);
+  }
+
+  .hand-checkbox[data-checked='true']::after {
+    opacity: 1;
+  }
+
+  .task-note {
+    position: relative;
+  }
+
+  .task-note[data-completed='true']::before {
+    content: '';
+    position: absolute;
+    top: -0.65rem;
+    right: 4.8rem;
+    width: 4.2rem;
+    height: 1.15rem;
+    transform: rotate(2deg);
+    border-left: 1px solid rgba(133, 105, 67, 0.14);
+    border-right: 1px solid rgba(133, 105, 67, 0.14);
+    background:
+      linear-gradient(90deg, rgba(255, 255, 255, 0.26), transparent 34%, rgba(255, 255, 255, 0.22)),
+      rgba(220, 189, 131, 0.5);
+    box-shadow: 0 2px 6px rgba(78, 58, 32, 0.1);
+  }
+
+  .pin {
+    position: absolute;
+    top: -0.42rem;
+    left: 1.05rem;
+    height: 0.86rem;
+    width: 0.86rem;
+    border-radius: 999px;
+    background: #bf6b68;
+    box-shadow:
+      inset -2px -2px rgba(95, 39, 37, 0.2),
+      0 2px 5px rgba(75, 49, 34, 0.22);
+  }
+
+  .pin::after {
+    content: '';
+    position: absolute;
+    left: 50%;
+    top: 0.68rem;
+    height: 0.8rem;
+    border-left: 1px solid rgba(73, 53, 36, 0.45);
+    transform: translateX(-50%) rotate(6deg);
+  }
+}
